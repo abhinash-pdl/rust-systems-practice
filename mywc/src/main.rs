@@ -3,18 +3,26 @@ use std::ffi::CString;
 fn main() {
     let mut failed = false;
     let args: Vec<String> = std::env::args().skip(1).collect();
-    if args.is_empty() {
+    let (opts, files) = match parse_args(args) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("mywc: {}", e);
+            std::process::exit(1);
+        }
+    };
+
+    if files.is_empty() {
         match count_fd(0) {
-            Ok(c) => println!(" {:>7} {:7} {:>7}", c.lines, c.words, c.bytes),
+            Ok(c) => print_counts(&opts, &c, None),
             Err(e) => {
                 eprintln!(" stdin: {}", e);
                 failed = true;
             }
         }
     } else {
-        for path in &args {
+        for path in &files {
             match count_path(path) {
-                Ok(c) => println!(" {} {} {} {}", c.lines, c.words, c.bytes, path),
+                Ok(c) => print_counts(&opts, &c, Some(path)),
                 Err(e) => {
                     eprintln!(" {}: {}", path, e);
                     failed = true;
@@ -80,4 +88,58 @@ fn count_fd(fd: i32) -> Result<Counts, std::io::Error> {
             }
         }
     }
+}
+
+struct Opts {
+    lines: bool,
+    words: bool,
+    bytes: bool,
+}
+fn parse_args(args: Vec<String>) -> Result<(Opts, Vec<String>), String> {
+    let mut opts = Opts {
+        lines: false,
+        words: false,
+        bytes: false,
+    };
+    let mut files = Vec::new();
+
+    for arg in args {
+        if arg.starts_with('-') && arg.len() > 1 {
+            for ch in arg[1..].chars() {
+                match ch {
+                    'l' => opts.lines = true,
+                    'w' => opts.words = true,
+                    'c' => opts.bytes = true,
+                    _ => return Err(format!("Invalid argument: {}", ch)),
+                }
+            }
+        } else {
+            files.push(arg);
+        }
+    }
+    if !opts.lines && !opts.words && !opts.bytes {
+        opts.lines = true;
+        opts.words = true;
+        opts.bytes = true;
+    }
+    Ok((opts, files))
+}
+
+fn print_counts(opts: &Opts, c: &Counts, name: Option<&str>) {
+    let mut parts: Vec<String> = Vec::new();
+    if opts.lines {
+        parts.push(format!("{} ", c.lines));
+    }
+    if opts.words {
+        parts.push(format!("{} ", c.words));
+    }
+    if opts.bytes {
+        parts.push(format!("{} ", c.bytes));
+    }
+    let mut line = parts.join(" ");
+    if let Some(n) = name {
+        line.push(' ');
+        line.push_str(n);
+    }
+    println!("{}", line);
 }
