@@ -1,7 +1,7 @@
 use crate::redirect::{redirect_stdout, split_redirect};
 use std::ffi::CString;
 pub fn run_command(words: &[&str]) {
-    let (words, outfile) = match split_redirect(words) {
+    let (words, outfile, append) = match split_redirect(words) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("mysh: {}", e);
@@ -18,7 +18,7 @@ pub fn run_command(words: &[&str]) {
         eprintln!("Error: fork() failed");
     } else if pid == 0 {
         if let Some(name) = outfile {
-            redirect_stdout(name);
+            redirect_stdout(name, append);
         }
         let s = unsafe { libc::execvp(c_words[0].as_ptr(), argv.as_ptr()) };
         if s == -1 {

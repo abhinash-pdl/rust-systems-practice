@@ -10,7 +10,7 @@ fn exec_words(words: &[&str]) -> ! {
 }
 
 pub fn run_pipeline(left: &[&str], right: &[&str]) {
-    let (right, outfile) = match split_redirect(right) {
+    let (right, outfile, append) = match split_redirect(right) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("mysh: {}", e);
@@ -40,7 +40,7 @@ pub fn run_pipeline(left: &[&str], right: &[&str]) {
             libc::close(read_end);
         }
         if let Some(name) = outfile {
-            redirect_stdout(name);
+            redirect_stdout(name, append);
         }
         exec_words(right);
     }
