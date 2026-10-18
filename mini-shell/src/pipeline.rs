@@ -1,3 +1,4 @@
+use crate::redirect::{redirect_stdout, split_redirect};
 use std::ffi::CString;
 fn exec_words(words: &[&str]) -> ! {
     let c_words: Vec<CString> = words.iter().map(|w| CString::new(*w).unwrap()).collect();
@@ -9,6 +10,13 @@ fn exec_words(words: &[&str]) -> ! {
 }
 
 pub fn run_pipeline(left: &[&str], right: &[&str]) {
+    let (right, outfile) = match split_redirect(right) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("mysh: {}", e);
+            return;
+        }
+    };
     let mut fds = [0i32; 2];
     if unsafe { libc::pipe(fds.as_mut_ptr()) } == -1 {
         eprintln!("pipe failed: {}", std::io::Error::last_os_error());
@@ -31,7 +39,9 @@ pub fn run_pipeline(left: &[&str], right: &[&str]) {
             libc::dup2(read_end, 0);
             libc::close(read_end);
         }
-
+        if let Some(name) = outfile {
+            redirect_stdout(name);
+        }
         exec_words(right);
     }
 

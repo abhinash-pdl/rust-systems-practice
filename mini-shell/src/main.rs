@@ -2,6 +2,7 @@ use std::io::{self, Write};
 mod builtins;
 mod command;
 mod pipeline;
+mod redirect;
 fn main() {
     loop {
         print!("mysh> ");
