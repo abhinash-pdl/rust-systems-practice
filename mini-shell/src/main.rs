@@ -22,14 +22,13 @@ fn main() {
         if builtins::handle(&words) {
             continue;
         }
-        if let Some(pos) = words.iter().position(|w| *w == "|") {
-            let (left, right) = (&words[..pos], &words[pos + 1..]);
-
-            if left.is_empty() || right.is_empty() {
-                eprintln!("mysh: syntax error near | ");
+        let cmds: Vec<&[&str]> = words.split(|w| *w == "|").collect();
+        if cmds.len() > 1 {
+            if cmds.iter().any(|c| c.is_empty()) {
+                eprintln!("mysh: syntax error near |");
                 continue;
             }
-            pipeline::run_pipeline(left, right);
+            pipeline::run_pipeline(&cmds);
         } else {
             command::run_command(&words);
         }

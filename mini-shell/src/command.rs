@@ -1,7 +1,14 @@
-use crate::redirect::{redirect_stdout, split_redirect};
+use crate::redirect::{redirect_stdin, redirect_stdout, split_input, split_redirect};
 use std::ffi::CString;
 pub fn run_command(words: &[&str]) {
     let (words, outfile, append) = match split_redirect(words) {
+        Ok(r) => r,
+        Err(e) => {
+            eprintln!("mysh: {}", e);
+            return;
+        }
+    };
+    let (words, infile) = match split_input(words) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("mysh: {}", e);
@@ -19,6 +26,9 @@ pub fn run_command(words: &[&str]) {
     } else if pid == 0 {
         if let Some(name) = outfile {
             redirect_stdout(name, append);
+        }
+        if let Some(name) = infile {
+            redirect_stdin(name);
         }
         let s = unsafe { libc::execvp(c_words[0].as_ptr(), argv.as_ptr()) };
         if s == -1 {
