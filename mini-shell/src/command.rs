@@ -30,6 +30,9 @@ pub fn run_command(words: &[&str]) {
         if let Some(name) = infile {
             redirect_stdin(name);
         }
+        unsafe {
+            libc::signal(libc::SIGINT, libc::SIG_DFL);
+        }
         let s = unsafe { libc::execvp(c_words[0].as_ptr(), argv.as_ptr()) };
         if s == -1 {
             eprintln!("exec failed: {}", std::io::Error::last_os_error());

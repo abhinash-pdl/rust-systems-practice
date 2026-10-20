@@ -4,6 +4,9 @@ mod command;
 mod pipeline;
 mod redirect;
 fn main() {
+    unsafe {
+        libc::signal(libc::SIGINT, libc::SIG_IGN);
+    }
     loop {
         print!("mysh> ");
         io::stdout().flush().unwrap();

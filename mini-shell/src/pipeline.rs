@@ -1,6 +1,9 @@
 use crate::redirect::{redirect_stdin, redirect_stdout, split_input, split_redirect};
 use std::ffi::CString;
 fn exec_words(words: &[&str]) -> ! {
+    unsafe {
+        libc::signal(libc::SIGINT, libc::SIG_DFL);
+    }
     let c_words: Vec<CString> = words.iter().map(|w| CString::new(*w).unwrap()).collect();
     let mut argv: Vec<*const libc::c_char> = c_words.iter().map(|w| w.as_ptr()).collect();
     argv.push(std::ptr::null());
